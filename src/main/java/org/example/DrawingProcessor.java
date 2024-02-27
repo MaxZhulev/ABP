@@ -1,13 +1,13 @@
 package org.example;
+
 import java.io.IOException;
 
 public class DrawingProcessor {
-    public void processDrawing(String inputDrawing, Employees employees) throws IOException {
-        if (!employees.isValidBarCode(inputDrawing)) {
-            employees.addToHoursDrawing(inputDrawing);
-        } else {
-            // Обработка ошибки связанной с Drawing
-            System.out.println("Ошибка с Drawing. Значение не принято.");
+    public void processDraw(int userID, String draw, Employees employees) {
+        try {
+            employees.addToHours(userID, draw);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

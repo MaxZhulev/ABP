@@ -1,61 +1,69 @@
 package org.example;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
-import java.io.*;
-import java.util.Iterator;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class Employees {
-
     private final String filePath;
 
     public Employees(String filePath) {
         this.filePath = filePath;
     }
 
-    public boolean isValidBarCode(String inputBarCode) throws IOException {
-        try (FileInputStream fileInputStream = new FileInputStream(new File(filePath))) {
-            Workbook workbook = new XSSFWorkbook(fileInputStream);
+    public boolean isValidUserID(int userID) throws IOException {
+        try (FileInputStream fileInputStream = new FileInputStream(filePath)) {
+            Workbook workbook = WorkbookFactory.create(fileInputStream);
             Sheet sheet = workbook.getSheet("Employees");
 
-            Iterator<Row> rowIterator = sheet.iterator();
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-                Cell cell = row.getCell(1); // Второй столбец (индекс 1)
-                if (cell != null && cell.getCellType() == CellType.STRING) {
-                    if (cell.getStringCellValue().equals(inputBarCode)) {
-                        return true;
+            for (Row row : sheet) {
+                Cell cell = row.getCell(1); // Первый столбец (индекс 0)
+                if (cell != null && cell.getCellTypeEnum() == CellType.NUMERIC) {
+                    if (cell.getNumericCellValue() == userID) {
+                        return true; // userID найден, возвращаем true
                     }
                 }
             }
+        } catch (InvalidFormatException e) {
+            e.printStackTrace();
         }
-        return false;
+        return false; // userID не найден, возвращаем false
     }
 
-    public void addToHoursBarCode(String inputBarCode) throws IOException {
-        try (FileInputStream fileInputStream = new FileInputStream(new File(filePath))) {
-            Workbook workbook = new XSSFWorkbook(fileInputStream);
+    public void addToHours(int userID, String draw) throws IOException {
+        try (FileInputStream fileInputStream = new FileInputStream(filePath)) {
+            Workbook workbook = WorkbookFactory.create(fileInputStream);
             Sheet hoursSheet = workbook.getSheet("Hours");
 
-            // Проверяем, что введенный BarCode существует в листе Employees
-            if (!isValidBarCode(inputBarCode)) {
-                System.out.println("Ошибка с BarCode. Значение не принято.");
-                return;
-            }
-
-            // Находим последнюю строку в столбце BarCode листа "Hours"
             int lastRow = hoursSheet.getLastRowNum();
-            Row row = hoursSheet.createRow(lastRow + 1); // Создаем новую строку
+            Row row = hoursSheet.createRow(lastRow + 1);
 
-            // Создаем ячейку во втором столбце (индекс 1) и устанавливаем значение BarCode
-            Cell cell = row.createCell(1, CellType.STRING);
-            cell.setCellValue(inputBarCode);
+            // Устанавливаем значение userID
+            Cell userIDCell = row.createCell(0, CellType.NUMERIC);
+            userIDCell.setCellValue(userID);
 
-            // Записываем изменения в файл
+            // Устанавливаем значение draw
+            Cell drawCell = row.createCell(1, CellType.STRING);
+            drawCell.setCellValue(draw);
+
+            // Устанавливаем значение времени и даты
+            Cell timeCell = row.createCell(2, CellType.STRING);
+            timeCell.setCellValue(getCurrentDateTime());
+
             try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
                 workbook.write(fileOut);
             }
+        } catch (InvalidFormatException e) {
+            e.printStackTrace();
         }
+    }
+    private String getCurrentDateTime() {
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return currentDateTime.format(formatter);
     }
 }

@@ -1,25 +1,22 @@
 package org.example;
-import java.io.IOException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
+import java.io.IOException;
 public class Main {
     public static void main(String[] args) {
-        try {
-            UI ui = new UI();
-            BarCodeProcessor barCodeProcessor = new BarCodeProcessor();
-            DrawingProcessor drawingProcessor = new DrawingProcessor();
-            Employees employees = new Employees("C:\\Java\\ExcelFile.xlsm");
+        UI ui = new UI();
+        Employees employees = new Employees("C:\\Java\\ExcelFile.xlsx");
+        DrawingProcessor drawingProcessor = new DrawingProcessor();
+        UserIDProcessor userIDProcessor = new UserIDProcessor();
 
-            while (true) {
-                // Проверка и обработка BarCode
-                barCodeProcessor.processBarCode(ui, employees);
+        int userID = ui.getUserID();
+        String draw = ui.getDraw();
 
-                // Затем получаем Drawing
-                String inputDrawing = ui.getInput("Введите Drawing: ");
-                // Проверка и обработка Drawing
-                drawingProcessor.processDrawing(inputDrawing, employees);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (userIDProcessor.isValidUserID(userID, employees)) {
+            drawingProcessor.processDraw(userID, draw, employees);
+        } else {
+            ErrorProcessor errorProcessor = new ErrorProcessor();
+            errorProcessor.handleInvalidUserID();
         }
     }
 }
